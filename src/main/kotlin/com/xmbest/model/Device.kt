@@ -47,14 +47,20 @@ data class Device(
                         adb.getProp("ro.product.cpu.abi") + ",core size = " +
                         adb.shell("cat /proc/cpuinfo | grep processor | wc -l") + ")"
             }
-            isRoot.update { adb.adb("id").startsWith("uid=0") }
+            isRoot.update { adb.shell("id").startsWith("uid=0") }
 
             isRemount.update { adb.adb("remount").contains("success") }.toString()
+
+            print(this@Device.isRoot.value)
         }
 
     }
 
     override fun equals(other: Any?): Boolean {
         return name == (other as Device?)?.name
+    }
+
+    override fun hashCode(): Int {
+        return name.hashCode()
     }
 }
