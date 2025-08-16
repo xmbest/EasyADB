@@ -3,6 +3,8 @@ package com.xmbest
 import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.IDevice
 import com.xmbest.model.Device
+import com.xmbest.model.Environment
+import com.xmbest.model.Theme
 import com.xmbest.utils.CmdUtil
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,19 +18,23 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 
 object GlobalManager {
-    private val appStorageAbsolutePath =
+    val appStorageAbsolutePath: String =
         File(System.getProperty("user.home"), ".easyAdb").absolutePath
 
     private val _customAdbPath = MutableStateFlow("")
     val customerPath = _customAdbPath.asStateFlow()
     private val _device = MutableStateFlow<Device?>(null)
     val device = _device.asStateFlow()
-    private val _devices = MutableStateFlow<Set<Device>>(emptySet())
+    private val _devices = MutableStateFlow(emptyList<Device>())
     val devices = _devices.asStateFlow()
     private val coroutineScope = CoroutineScope(Dispatchers.Default)
+
+    private val _theme = MutableStateFlow(Theme.System)
+    val theme = _theme.asStateFlow()
+
     private var job: Job? = null
 
-    private val _adbEnvironment = MutableStateFlow(AdbEnvironment.SYSTEM)
+    private val _adbEnvironment = MutableStateFlow(Environment.SYSTEM)
     val adbEnvironment = _adbEnvironment.asStateFlow()
 
     init {
@@ -66,14 +72,14 @@ object GlobalManager {
     fun refreshDevices() {
         job?.cancel()
         job = coroutineScope.launch {
-            val set = mutableSetOf<Device>()
+            val list = mutableListOf<Device>()
             CmdUtil.devices().forEach { deviceName ->
-                set.add(devices.value.firstOrNull { it.name == deviceName } ?: Device(deviceName))
+                list.add(devices.value.firstOrNull { it.name == deviceName } ?: Device(deviceName))
             }
-            _devices.update { set }
+            _devices.update { list }
             if (devices.value.isEmpty()) {
                 _device.update { null }
-            } else if (device.value == null || !set.contains(device.value)) {
+            } else if (device.value == null || !list.contains(device.value)) {
                 _device.update { devices.value.first() }
             }
         }
@@ -87,15 +93,10 @@ object GlobalManager {
         }
     }
 
-    fun changeAdbEnv(environment: AdbEnvironment) {
-        _adbEnvironment.update { environment }
-        initAdbListener()
-    }
-
     fun getAdbAbsolutePath(isWindow: Boolean = hostOs.isWindows): String {
         return when (adbEnvironment.value) {
-            AdbEnvironment.CUSTOMER -> customerPath.value
-            AdbEnvironment.APP -> File(
+            Environment.CUSTOMER -> customerPath.value
+            Environment.APP -> File(
                 appStorageAbsolutePath,
                 if (isWindow) "adb.exe" else "adb"
             ).absolutePath
@@ -103,15 +104,14 @@ object GlobalManager {
             else -> "adb"
         }
     }
-}
 
-/**
- * APP 程序自带
- * SYSTEM 环境变量
- * CUSTOMER 自定义路径
- */
-enum class AdbEnvironment {
-    APP,
-    SYSTEM,
-    CUSTOMER;
+    fun changeAdbEnv(environment: Environment) {
+        _adbEnvironment.update { environment }
+        AndroidDebugBridge.createBridge(getAdbAbsolutePath(), true, 5000, TimeUnit.SECONDS)
+    }
+
+    fun changeTheme(t: Theme) {
+        _theme.update { t }
+    }
+
 }

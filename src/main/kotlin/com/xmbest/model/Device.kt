@@ -55,12 +55,4 @@ data class Device(
         }
 
     }
-
-    override fun equals(other: Any?): Boolean {
-        return name == (other as Device?)?.name
-    }
-
-    override fun hashCode(): Int {
-        return name.hashCode()
-    }
 }

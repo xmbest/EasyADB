@@ -8,16 +8,16 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
+import com.xmbest.GlobalManager
+import com.xmbest.model.Theme
 import com.xmbest.theme.GOOGLE_BLUE
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
-enum class Theme {
-    Dark, Light, System
-}
 
 class MainViewModel {
     val lightColors = lightColors(
@@ -44,8 +44,6 @@ class MainViewModel {
         background = Color(0xFF202021),
         onBackground = Color(0x99EBE5E0)
     )
-    private val _isDart = MutableStateFlow<Boolean?>(null)
-    val isDart = _isDart.asStateFlow()
 
     private val _windowState = MutableStateFlow(
         WindowState(
@@ -58,19 +56,19 @@ class MainViewModel {
 
     private val coroutineScope = CoroutineScope(Dispatchers.Default)
 
+    internal val isDart = MutableStateFlow<Boolean?>(null)
+
     init {
-        // TODO 查询用户设置的模式
-//        _isDart.update { true }
         // TODO 更新窗口高度、排列、启动位置x,y
-
-    }
-
-    fun updateThemeModel(theme: Theme) {
-        _isDart.update {
-            when (theme) {
-                Theme.Dark -> true
-                Theme.Light -> false
-                Theme.System -> null
+        coroutineScope.launch {
+            GlobalManager.theme.collect { t ->
+                isDart.update {
+                    when (t) {
+                        Theme.Dark -> true
+                        Theme.Light -> false
+                        else -> null
+                    }
+                }
             }
         }
     }

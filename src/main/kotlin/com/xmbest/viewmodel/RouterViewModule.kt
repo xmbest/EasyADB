@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
-data class Page(val name: String, val icon: String, val comp: @Composable (() -> Unit))
+data class Page(val name: String, val icon: String, val comp: @Composable () -> Unit)
 
 class RouterViewModule() {
     val pageList = listOf(

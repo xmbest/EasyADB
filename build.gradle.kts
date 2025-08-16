@@ -20,6 +20,9 @@ repositories {
 dependencies {
     implementation(compose.desktop.currentOs)
     implementation("com.android.tools.ddms:ddmlib:31.3.1")
+    implementation("com.alibaba.fastjson2:fastjson2-kotlin:2.0.57")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:2.1.0")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:2.1.0")
     testImplementation(kotlin("test"))
 }
 

@@ -7,6 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import com.xmbest.module.InitModule
 import com.xmbest.screen.Router
 import com.xmbest.viewmodel.MainViewModel
 
@@ -27,6 +28,7 @@ fun App(viewModel: MainViewModel) {
 }
 
 fun main() = application {
+    InitModule.init()
     val viewModel = remember { MainViewModel() }
     val windowState = viewModel.windowState.collectAsState()
     Window(title = "EasyADB", onCloseRequest = ::exitApplication, state = windowState.value) {
