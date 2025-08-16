@@ -23,19 +23,19 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xmbest.GlobalManager
 import com.xmbest.utils.ResourceUtil
 import com.xmbest.viewmodel.RouterViewModule
 
 @Composable
 fun Router() {
-    val viewModel: RouterViewModule = remember { RouterViewModule() }
+    val viewModel: RouterViewModule = viewModel { RouterViewModule() }
     Row(modifier = Modifier.fillMaxSize()) {
         Left(modifier = Modifier.fillMaxHeight().width(240.dp), viewModel)
         Right(modifier = Modifier.fillMaxHeight().weight(1f), viewModel)

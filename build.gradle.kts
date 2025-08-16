@@ -23,6 +23,7 @@ dependencies {
     implementation("com.alibaba.fastjson2:fastjson2-kotlin:2.0.57")
     implementation("org.jetbrains.kotlin:kotlin-stdlib:2.1.0")
     implementation("org.jetbrains.kotlin:kotlin-reflect:2.1.0")
+    implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:2.9.2")
     testImplementation(kotlin("test"))
 }
 
