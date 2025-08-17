@@ -38,12 +38,12 @@ object DeviceManager {
         AndroidDebugBridge.addDeviceChangeListener(object :
             AndroidDebugBridge.IDeviceChangeListener {
             override fun deviceConnected(device: IDevice?) {
-                println("deviceConnected device.name: ${device?.name}")
+                LogUtil.d(TAG, "deviceConnected device.name: ${device?.name}")
                 refreshDevices()
             }
 
             override fun deviceDisconnected(device: IDevice?) {
-                println("deviceDisconnected device.name: ${device?.name}")
+                LogUtil.d(TAG, "deviceDisconnected device.name: ${device?.name}")
                 refreshDevices()
             }
 
@@ -51,7 +51,7 @@ object DeviceManager {
                 device: IDevice?,
                 changeMask: Int
             ) {
-                println("deviceChanged device.name: ${device?.name},changeMask: $changeMask")
+                LogUtil.d(TAG, "deviceChanged device.name: ${device?.name},changeMask: $changeMask")
                 refreshDevices()
             }
         })
@@ -89,7 +89,7 @@ object DeviceManager {
         refreshDevicesJob?.cancel()
         refreshDevicesJob = coroutineScope.launch {
             val bridge = AndroidDebugBridge.getBridge()
-            println("isConnected = ${bridge?.isConnected},size = ${bridge?.devices?.size}")
+            LogUtil.d(TAG, "isConnected = ${bridge?.isConnected},size = ${bridge?.devices?.size}")
             if (bridge?.isConnected == true) {
                 _devices.update { bridge.devices.toList() }
             } else {

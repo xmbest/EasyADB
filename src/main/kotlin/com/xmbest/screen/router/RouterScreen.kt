@@ -30,7 +30,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xmbest.utils.ResourceUtil
-import com.xmbest.screen.router.RouterViewModule
 
 @Composable
 fun RouterScreen(viewModel: RouterViewModule = viewModel()) {
