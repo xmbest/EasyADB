@@ -1,4 +1,4 @@
-package com.xmbest.viewmodel
+package com.xmbest
 
 import androidx.compose.material.darkColors
 import androidx.compose.material.lightColors
@@ -8,18 +8,23 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
-import com.xmbest.GlobalManager
 import com.xmbest.model.Theme
 import com.xmbest.theme.GOOGLE_BLUE
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.Locale
 
+object Config {
 
-class MainViewModel {
+    private val coroutineScope = CoroutineScope(Dispatchers.Default)
+
+    const val STRINGS_NAME = "strings"
+
     val lightColors = lightColors(
         // 主色调
         primary = GOOGLE_BLUE,
@@ -52,16 +57,21 @@ class MainViewModel {
         )
     )
 
-    internal val windowState = _windowState.asStateFlow()
+    private val _locale = MutableStateFlow(Locale.ENGLISH)
+    val locale = _locale.asStateFlow()
 
-    private val coroutineScope = CoroutineScope(Dispatchers.Default)
+    val isDart = MutableStateFlow<Boolean?>(null)
 
-    internal val isDart = MutableStateFlow<Boolean?>(null)
+    val windowState = _windowState.asStateFlow()
+
+    private val _theme = MutableStateFlow(Theme.System)
+
+    val theme = _theme.asStateFlow()
+
 
     init {
-        // TODO 更新窗口高度、排列、启动位置x,y
         coroutineScope.launch {
-            GlobalManager.theme.collect { t ->
+            theme.collectLatest { t ->
                 isDart.update {
                     when (t) {
                         Theme.Dark -> true
@@ -71,6 +81,10 @@ class MainViewModel {
                 }
             }
         }
+    }
+
+    fun changeTheme(newTheme: Theme) {
+        _theme.update { newTheme }
     }
 
 }

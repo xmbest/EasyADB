@@ -1,28 +1,8 @@
 package com.xmbest.utils
 
-import com.xmbest.GlobalManager
 import java.io.File
 
 object CmdUtil {
-
-    fun killServer() =
-        runAndGetResult("${GlobalManager.getAdbAbsolutePath()} kill-server")
-
-    fun devices(): List<String> {
-        val list = mutableListOf<String>()
-        val devices: String =
-            runAndGetResult("${GlobalManager.getAdbAbsolutePath()} devices")
-        val splitList = devices.trim().split("\n")
-        //只列出活跃(device)的设备
-        for (i in 1 until splitList.size) {
-            val element = splitList[i]
-            if (element.contains("device")) {
-                val device = element.replace("device", "").trim()
-                list.add(device)
-            }
-        }
-        return list
-    }
 
     /**
      * 启动一个进程并返回 Process 对象。

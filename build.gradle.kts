@@ -10,20 +10,21 @@ group = "com.xmbet"
 version = "1.0-SNAPSHOT"
 
 repositories {
-    maven("https://maven.aliyun.com/repository/public/")
-    maven("https://maven.aliyun.com/repository/central")
     mavenCentral()
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
+    maven("https://maven.aliyun.com/repository/public/")
+    maven("https://maven.aliyun.com/repository/central")
     google()
 }
 
 dependencies {
     implementation(compose.desktop.currentOs)
-    implementation("com.android.tools.ddms:ddmlib:31.3.1")
-    implementation("com.alibaba.fastjson2:fastjson2-kotlin:2.0.57")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:2.1.0")
-    implementation("org.jetbrains.kotlin:kotlin-reflect:2.1.0")
+    implementation("com.alibaba.fastjson2:fastjson2-kotlin:${properties["fastjson2.version"]}")
+    implementation("com.android.tools.ddms:ddmlib:${properties["ddmlib.version"]}")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:${properties["kotlin.version"]}")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:${properties["kotlin.version"]}")
     implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:2.9.2")
+    implementation(project(":ddmlib"))
     testImplementation(kotlin("test"))
 }
 

@@ -7,45 +7,49 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.xmbest.GlobalManager
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.xmbest.Config
 import com.xmbest.component.ButtonItem
 import com.xmbest.component.SettingsItem
+import com.xmbest.locale.rememberPropertiesLocalization
 import com.xmbest.viewmodel.SettingsViewModel
 
 @Composable
 fun SettingsScreen() {
-    val viewModel = remember { SettingsViewModel() }
-    val theme = viewModel.currentTheme.collectAsState()
-    val environment = viewModel.currentEnvironment.collectAsState()
+    val viewModel = viewModel { SettingsViewModel() }
+    val theme = viewModel.theme.collectAsState()
+    val adb = viewModel.adbPath.collectAsState().value
+
+    val strings = rememberPropertiesLocalization(locale = Config.locale.value)
+
     SettingsItem(
-        title = "程序主题",
+        title = strings.get("theme.setting"),
         modifier = Modifier.fillMaxWidth().padding(top = 12.dp, start = 12.dp)
     ) {
         Row(
             modifier = Modifier.clip(RoundedCornerShape(8.dp)).height(44.dp)
         ) {
-            viewModel.theme.forEach { item ->
+            viewModel.themeList.forEach { item ->
                 ButtonItem(item.first, item.second == theme.value) {
-                    GlobalManager.changeTheme(item.second)
+                    viewModel.changeTheme(item.second)
                 }
             }
         }
     }
 
     SettingsItem(
-        title = "adb配置",
+        title = strings.get("adb.config"),
         modifier = Modifier.fillMaxWidth().padding(start = 12.dp, top = 6.dp)
     ) {
         Row(
             modifier = Modifier.clip(RoundedCornerShape(8.dp)).height(44.dp)
         ) {
-            viewModel.environment.forEach { item ->
-                ButtonItem(item.first, item.second == environment.value) {
-                    GlobalManager.changeAdbEnv(item.second)
+            viewModel.envList.forEach { item ->
+                ButtonItem(item.first, item.second.path == adb) {
+                    viewModel.changeAdbEnv(item.second)
                 }
             }
         }

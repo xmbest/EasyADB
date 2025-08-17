@@ -29,7 +29,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.xmbest.GlobalManager
 import com.xmbest.utils.ResourceUtil
 import com.xmbest.viewmodel.RouterViewModule
 
@@ -45,10 +44,10 @@ fun Router() {
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun Left(modifier: Modifier = Modifier, viewModel: RouterViewModule) {
-    val state = viewModel.index.collectAsState()
-    val devicesListShow = viewModel.deviceListShow.collectAsState()
-    val currentDevice = GlobalManager.device.collectAsState()
-    val currentDevices = GlobalManager.devices.collectAsState()
+    val device = viewModel.device.collectAsState().value
+    val devices = viewModel.devices.collectAsState().value
+    val state = viewModel.index.collectAsState().value
+    val devicesListShow = viewModel.deviceListShow.collectAsState().value
     Column(
         modifier.background(MaterialTheme.colors.background).padding(start = 12.dp, end = 12.dp)
     ) {
@@ -56,7 +55,7 @@ fun Left(modifier: Modifier = Modifier, viewModel: RouterViewModule) {
             Spacer(modifier = Modifier.height(8.dp))
             ListItem(
                 modifier = Modifier.height(44.dp).clip(RoundedCornerShape(8.dp)).background(
-                    if (index == state.value) MaterialTheme.colors.primary
+                    if (index == state) MaterialTheme.colors.primary
                     else MaterialTheme.colors.background
                 ).clickable {
                     viewModel.updateIndex(index)
@@ -64,12 +63,12 @@ fun Left(modifier: Modifier = Modifier, viewModel: RouterViewModule) {
                     Icon(
                         painter = painterResource(item.icon),
                         item.icon,
-                        tint = optionColor(index == state.value)
+                        tint = optionColor(index == state)
                     )
                 }) {
                 Text(
                     text = item.name,
-                    color = optionColor(index == state.value)
+                    color = optionColor(index == state)
                 )
             }
         }
@@ -85,12 +84,12 @@ fun Left(modifier: Modifier = Modifier, viewModel: RouterViewModule) {
                     contentDescription = "refresh devices",
                     tint = MaterialTheme.colors.onBackground,
                     modifier = Modifier.clickable {
-                        GlobalManager.refreshDevices()
+
                     }
                 )
             }) {
                 Text(
-                    currentDevice.value?.name ?: "请选择设备",
+                    device?.serialNumber ?: "请选择设备",
                     maxLines = 2,
                     color = MaterialTheme.colors.onBackground,
                 )
@@ -98,22 +97,22 @@ fun Left(modifier: Modifier = Modifier, viewModel: RouterViewModule) {
         }
 
         DropdownMenu(
-            expanded = devicesListShow.value, onDismissRequest = {
-                viewModel.updateDeviceListShow(!devicesListShow.value)
+            expanded = devicesListShow, onDismissRequest = {
+                viewModel.updateDeviceListShow(!devicesListShow)
             }, modifier = Modifier.width(216.dp)
         ) {
-            if (currentDevices.value.isEmpty()) {
+            if (devices.isEmpty()) {
                 DropdownMenuItem(onClick = {
                 }) {
                     Text(text = "当前设备列表为空")
                 }
             } else {
-                currentDevices.value.forEach {
+                devices.forEach {
                     DropdownMenuItem(onClick = {
-                        GlobalManager.changeDevice(it.name)
+                        viewModel.changeDevice(it)
                         viewModel.updateDeviceListShow(false)
                     }) {
-                        Text(text = it.name)
+                        Text(text = it.serialNumber)
                     }
                 }
             }

@@ -16,3 +16,4 @@ pluginManagement {
 }
 
 rootProject.name = "EasyADB"
+include(":ddmlib")

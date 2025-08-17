@@ -1,39 +1,45 @@
 package com.xmbest.viewmodel
 
-import com.xmbest.GlobalManager
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.xmbest.Config
+import com.xmbest.ddmlib.DeviceManager
+import com.xmbest.locale.PropertiesLocalization
 import com.xmbest.model.Environment
 import com.xmbest.model.Theme
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
-class SettingsViewModel {
-    private val coroutineScope = CoroutineScope(Dispatchers.Default)
-    val theme = listOf(
-        Pair("浅色", Theme.Light),
-        Pair("深色", Theme.Dark),
-        Pair("跟随系统", Theme.System)
+class SettingsViewModel : ViewModel() {
+
+    val strings = PropertiesLocalization.create(Config.STRINGS_NAME, Config.locale.value)
+
+    val themeList = listOf(
+        Pair(strings.get("theme.light"), Theme.Light),
+        Pair(strings.get("theme.night"), Theme.Dark),
+        Pair(strings.get("theme.system"), Theme.System)
     )
 
-    val environment = listOf(
-        Pair("程序携带", Environment.APP),
-        Pair("环境变量", Environment.SYSTEM),
-        Pair("自定义", Environment.CUSTOMER)
+    val envList = listOf(
+        Pair(strings.get("env.system"), Environment.Program),
+        Pair(strings.get("env.program"), Environment.System),
+        Pair(strings.get("env.custom"), Environment.Custom(""))
     )
 
-    val currentTheme = MutableStateFlow(Theme.System)
-    val currentEnvironment = MutableStateFlow(Environment.APP)
+    val theme = Config.theme
 
-    init {
-        coroutineScope.launch {
-            GlobalManager.theme.collect(currentTheme)
+    val adbPath = DeviceManager.adbPath
+
+    fun changeAdbEnv(environment: Environment) {
+        viewModelScope.launch(Dispatchers.IO) {
+            DeviceManager.initialize(environment.path)
         }
+    }
 
-        coroutineScope.launch {
-            GlobalManager.adbEnvironment.collect(currentEnvironment)
+    fun changeTheme(newTheme: Theme) {
+        viewModelScope.launch(Dispatchers.IO) {
+            Config.changeTheme(newTheme)
         }
-
     }
 
 }
