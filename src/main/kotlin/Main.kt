@@ -8,7 +8,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import com.xmbest.Config
 import com.xmbest.module.InitModule
-import com.xmbest.screen.Router
+import com.xmbest.screen.router.RouterScreen
 
 @OptIn(InternalComposeUiApi::class)
 @Composable
@@ -24,7 +24,7 @@ fun App() {
             else
                 Config.lightColors
     ) {
-        Router()
+        RouterScreen()
     }
 }
 

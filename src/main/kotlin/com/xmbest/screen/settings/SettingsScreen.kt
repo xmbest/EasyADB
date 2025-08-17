@@ -1,4 +1,4 @@
-package com.xmbest.screen
+package com.xmbest.screen.settings
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,45 +11,39 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.xmbest.Config
 import com.xmbest.component.ButtonItem
 import com.xmbest.component.SettingsItem
-import com.xmbest.locale.rememberPropertiesLocalization
-import com.xmbest.viewmodel.SettingsViewModel
 
 @Composable
-fun SettingsScreen() {
-    val viewModel = viewModel { SettingsViewModel() }
-    val theme = viewModel.theme.collectAsState()
-    val adb = viewModel.adbPath.collectAsState().value
+fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
 
-    val strings = rememberPropertiesLocalization(locale = Config.locale.value)
+    val uiState = viewModel.uiState.collectAsState().value
 
     SettingsItem(
-        title = strings.get("theme.setting"),
+        title = viewModel.getString("theme.setting"),
         modifier = Modifier.fillMaxWidth().padding(top = 12.dp, start = 12.dp)
     ) {
         Row(
             modifier = Modifier.clip(RoundedCornerShape(8.dp)).height(44.dp)
         ) {
             viewModel.themeList.forEach { item ->
-                ButtonItem(item.first, item.second == theme.value) {
-                    viewModel.changeTheme(item.second)
+                ButtonItem(item.first, item.second == uiState.theme) {
+                    viewModel.onEvent(SettingsUiEvent.UpdateTheme(item.second))
                 }
             }
         }
     }
 
     SettingsItem(
-        title = strings.get("adb.config"),
+        title = viewModel.getString("adb.config"),
         modifier = Modifier.fillMaxWidth().padding(start = 12.dp, top = 6.dp)
     ) {
         Row(
             modifier = Modifier.clip(RoundedCornerShape(8.dp)).height(44.dp)
         ) {
             viewModel.envList.forEach { item ->
-                ButtonItem(item.first, item.second.path == adb) {
-                    viewModel.changeAdbEnv(item.second)
+                ButtonItem(item.first, item.second.path == uiState.adbPAth) {
+                    viewModel.onEvent(SettingsUiEvent.UpdateAdbEnv(item.second))
                 }
             }
         }
