@@ -4,8 +4,8 @@ import java.util.logging.Level
 import java.util.logging.Logger
 
 
-object LogUtil {
-    private val logger: Logger = Logger.getLogger(LogUtil::class.java.name)
+object Log {
+    private val logger: Logger = Logger.getLogger(Log::class.java.name)
 
     init {
         logger.level = Level.FINE

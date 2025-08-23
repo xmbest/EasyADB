@@ -27,7 +27,7 @@ class ConsoleFormatter : Formatter() {
         val stackTrace = currentThread.stackTrace
         val target = stackTrace.firstOrNull {
             it.className != ConsoleFormatter::class.java.name &&
-            it.className != LogUtil::class.java.name &&
+            it.className != Log::class.java.name &&
             !it.className.startsWith("java.util.logging") &&
             !it.className.startsWith("java.lang.Thread")
         } ?: stackTrace.getOrElse(8) { stackTrace.last() }
