@@ -53,12 +53,15 @@ fun Left(
         viewModel.pageList.forEachIndexed { index, item ->
             Spacer(modifier = Modifier.height(8.dp))
             ListItem(
-                modifier = Modifier.height(44.dp).clip(RoundedCornerShape(8.dp)).background(
-                    if (index == uiState.index) MaterialTheme.colors.primary
-                    else MaterialTheme.colors.background
-                ).clickable {
-                    viewModel.onEvent(RouterUiEvent.SelectLeftItem(index))
-                }, icon = {
+                modifier = Modifier
+                    .height(44.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(
+                        if (index == uiState.index) MaterialTheme.colors.primary
+                        else MaterialTheme.colors.background
+                    ).clickable {
+                        viewModel.onEvent(RouterUiEvent.SelectLeftItem(index))
+                    }, icon = {
                     Icon(
                         painter = painterResource(item.icon),
                         item.icon,
@@ -75,18 +78,21 @@ fun Left(
             modifier = Modifier.weight(1f).padding(bottom = 8.dp).fillMaxWidth(),
             verticalAlignment = Alignment.Bottom
         ) {
-            ListItem(modifier = Modifier.height(44.dp).clip(RoundedCornerShape(8.dp)).clickable {
-                viewModel.onEvent(RouterUiEvent.ShowDeviceList(true))
-            }, icon = {
-                Icon(
-                    painter = painterResource(ResourceUtil.iconPath("mobile")),
-                    contentDescription = "refresh devices",
-                    tint = MaterialTheme.colors.onBackground,
-                    modifier = Modifier.clickable {
-                        viewModel.onEvent(RouterUiEvent.RefreshDevice)
-                    }
-                )
-            }) {
+            ListItem(
+                modifier = Modifier
+                    .height(44.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable {
+                        viewModel.onEvent(RouterUiEvent.ShowDeviceList(true))
+                    }, icon = {
+                    Icon(
+                        painter = painterResource(ResourceUtil.iconPath("mobile")),
+                        contentDescription = "refresh devices",
+                        tint = MaterialTheme.colors.onBackground,
+                        modifier = Modifier.clickable {
+                            viewModel.onEvent(RouterUiEvent.RefreshDevice)
+                        })
+                }) {
                 Text(
                     uiState.device?.serialNumber ?: viewModel.getString("device.select"),
                     maxLines = 2,

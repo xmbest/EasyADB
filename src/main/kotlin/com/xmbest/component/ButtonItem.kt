@@ -21,7 +21,7 @@ fun ButtonItem(text: String, select: Boolean, onClick: () -> Unit) {
             backgroundColor =
                 if (select)
                     MaterialTheme.colors.primary
-                else MaterialTheme.colors.background
+                else MaterialTheme.colors.surface
         ),
         modifier = Modifier.fillMaxHeight()
     ) {
