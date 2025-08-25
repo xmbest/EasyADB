@@ -11,10 +11,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun SettingsItem(title: String, modifier: Modifier, comp: @Composable () -> Unit) {
+fun TitleContent(title: String, modifier: Modifier, comp: @Composable () -> Unit) {
     Column(modifier) {
         Text(title, color = MaterialTheme.colors.onBackground)
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(4.dp))
         Row {
             comp()
         }

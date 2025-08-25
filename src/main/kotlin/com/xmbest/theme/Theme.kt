@@ -30,6 +30,8 @@ val Night = darkColors(
     onPrimary = night_onPrimary,
     secondary = night_second,
     onSecondary = night_onSecond,
+    surface = night_background,
+    onSurface = night_onBackground,
     background = night_background,
     onBackground = night_onBackground
 )

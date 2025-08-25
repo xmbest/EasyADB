@@ -1,12 +1,15 @@
 package com.xmbest.screen.router
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Settings
 import androidx.lifecycle.viewModelScope
 import com.android.ddmlib.IDevice
 import com.xmbest.base.BaseViewModel
 import com.xmbest.ddmlib.DeviceManager
 import com.xmbest.model.Page
+import com.xmbest.screen.file.FileScreen
 import com.xmbest.screen.settings.SettingsScreen
-import com.xmbest.utils.ResourceUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -15,13 +18,15 @@ import kotlinx.coroutines.launch
 class RouterViewModule() : BaseViewModel<RouterUiState>() {
     val pageList = listOf(
         Page(
-            getString("router.item.settings"),
-            ResourceUtil.iconPath("settings")
-        ) { SettingsScreen() },
+            getString("router.item.fileManagement"),
+            Icons.Default.Folder
+        ) {
+            FileScreen()
+        },
         Page(
-            getString("router.item.settings") + "1",
-            ResourceUtil.iconPath("settings")
-        ) { SettingsScreen() },
+            getString("router.item.settings"),
+            Icons.Default.Settings
+        ) { SettingsScreen() }
     )
 
     override val _uiState = MutableStateFlow(RouterUiState())

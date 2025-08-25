@@ -63,8 +63,8 @@ fun Left(
                         viewModel.onEvent(RouterUiEvent.SelectLeftItem(index))
                     }, icon = {
                     Icon(
-                        painter = painterResource(item.icon),
                         item.icon,
+                        item.icon.name,
                         tint = optionColor(index == uiState.index)
                     )
                 }) {
