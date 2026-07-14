@@ -45,7 +45,7 @@ class SettingsViewModel : BaseViewModel<SettingsUiState>() {
                 screenshotSaveAbsolutePath,
                 PreferencesUtil.get(PREFERENCES_CMD_AUTO_CLOSE_ENABLED, true),
                 PreferencesUtil.get(PREFERENCES_CMD_AUTO_CLOSE_TIMEOUT, 3),
-                PreferencesUtil.get(PREFERENCES_TITLE_BAR_ALPHA, 0.6f)
+                PreferencesUtil.get(PREFERENCES_TITLE_BAR_ALPHA, 0.8f)
             )
         )
 

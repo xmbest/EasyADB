@@ -10,6 +10,7 @@ import me.newbieeming.exec
 import me.newbieeming.model.Environment
 import me.newbieeming.util.PreferencesUtil
 import me.newbieeming.util.PreferencesUtil.PREFERENCES_ADB_PATH
+import me.newbieeming.util.PreferencesUtil.PREFERENCES_CUSTOMER_ADB_PATH
 import java.io.File
 
 object InitModule {
@@ -58,15 +59,14 @@ object InitModule {
         val resolveResult = AdbPathResolver.resolveAdbPath("adb")
 
         return when (resolveResult.source) {
-            // 从 PATH 环境变量找到，保存到 System
             AdbPathResolver.AdbSource.PATH_ENV -> {
-                Environment.System.path = resolveResult.path
                 PreferencesUtil.set(PREFERENCES_ADB_PATH, Environment.System.path)
-                resolveResult.path
+                Environment.System.path  // 返回 "adb"，而非 resolveResult.path
             }
-            // 从 SDK 默认路径找到，保存到 Custom
+            // 从 SDK 默认路径找到：同时写 CUSTOMER_ADB_PATH，保证重启后 TextField 有内容
             AdbPathResolver.AdbSource.SDK_DEFAULT -> {
                 Environment.Custom.path = resolveResult.path
+                PreferencesUtil.set(PREFERENCES_CUSTOMER_ADB_PATH, resolveResult.path)
                 PreferencesUtil.set(PREFERENCES_ADB_PATH, resolveResult.path)
                 resolveResult.path
             }
