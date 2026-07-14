@@ -26,6 +26,7 @@ import me.newbieeming.model.Theme
 import me.newbieeming.module.InitModule
 import me.newbieeming.screen.navigation.NaviScreen
 import me.newbieeming.util.ErrorLogger
+import me.newbieeming.util.WindowsTitleBarUtil
 import org.jetbrains.skiko.hostOs
 
 private val macTitleBarHeight = 28.dp
@@ -40,12 +41,14 @@ fun FrameWindowScope.App() {
         else -> theme.color
     }
 
-    LaunchedEffect(colors.isLight) {
+    LaunchedEffect(colors.background, colors.onBackground, colors.isLight) {
         if (hostOs.isMacOS) {
             window.rootPane.putClientProperty(
                 "apple.awt.windowAppearance",
                 if (colors.isLight) "NSAppearanceNameAqua" else "NSAppearanceNameDarkAqua",
             )
+        } else if (hostOs.isWindows) {
+            WindowsTitleBarUtil.apply(window, colors)
         }
     }
 

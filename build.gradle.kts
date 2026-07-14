@@ -40,6 +40,8 @@ dependencies {
     implementation(project(":ddmlib"))
     implementation("com.android.tools.ddms:ddmlib:${properties["ddmlib.version"]}")
     implementation("com.android.tools:common:${properties["ddmlib.version"]}")
+    // Windows 原生标题栏颜色（DwmSetWindowAttribute）
+    implementation("net.java.dev.jna:jna:5.17.0")
     // 数据持久化
     implementation("com.russhwolf:multiplatform-settings:${properties["multiplatform.settings.version"]}")
     testImplementation(kotlin("test"))
