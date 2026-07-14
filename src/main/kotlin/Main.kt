@@ -1,8 +1,21 @@
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.MaterialTheme
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.awt.SwingWindow
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.window.Window
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.application
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
@@ -13,21 +26,47 @@ import me.newbieeming.model.Theme
 import me.newbieeming.module.InitModule
 import me.newbieeming.screen.navigation.NaviScreen
 import me.newbieeming.util.ErrorLogger
+import org.jetbrains.skiko.hostOs
+
+private val macTitleBarHeight = 28.dp
 
 @Composable
-fun App() {
-    val theme = Config.theme.collectAsState().value
-    MaterialTheme(
-        colors =
-            if (theme == Theme.System)
-                if (isSystemInDarkTheme()) Theme.Night.color else Theme.Light.color
-            else
-                Config.theme.value.color
-    ) {
-        NaviScreen()
+fun FrameWindowScope.App() {
+    val colors = when (val theme = Config.theme.collectAsState().value) {
+        Theme.System -> {
+            if (isSystemInDarkTheme()) Theme.Night.color else Theme.Light.color
+        }
+
+        else -> theme.color
+    }
+
+    LaunchedEffect(colors.isLight) {
+        if (hostOs.isMacOS) {
+            window.rootPane.putClientProperty(
+                "apple.awt.windowAppearance",
+                if (colors.isLight) "NSAppearanceNameAqua" else "NSAppearanceNameDarkAqua",
+            )
+        }
+    }
+
+    MaterialTheme(colors = colors) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colors.background.copy(alpha = 0.6f)),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = if (hostOs.isMacOS) macTitleBarHeight else 0.dp),
+            ) {
+                NaviScreen()
+            }
+        }
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 fun main() {
     Thread.setDefaultUncaughtExceptionHandler { _, throwable ->
         ErrorLogger.log(throwable)
@@ -40,11 +79,17 @@ fun main() {
                 override val viewModelStore: ViewModelStore = viewModelStore
             }
         }
-        Window(
+        SwingWindow(
             title = "EasyADB",
             onCloseRequest = ::exitApplication,
             state = windowState.value,
-            icon = painterResource("icon/logo.ico")
+            icon = painterResource("icon/logo.ico"),
+            init = { window ->
+                if (hostOs.isMacOS) {
+                    window.rootPane.putClientProperty("apple.awt.fullWindowContent", true)
+                    window.rootPane.putClientProperty("apple.awt.transparentTitleBar", true)
+                }
+            },
         ) {
             LaunchedEffect(Unit) {
                 snapshotFlow { windowState.value.size }
