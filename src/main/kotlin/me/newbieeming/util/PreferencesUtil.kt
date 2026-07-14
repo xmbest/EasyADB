@@ -39,6 +39,11 @@ object PreferencesUtil {
     const val PREFERENCES_THEME = "settings.theme"
 
     /**
+     * 标题栏透明度（0.0f ~ 1.0f）
+     */
+    const val PREFERENCES_TITLE_BAR_ALPHA = "settings.title_bar_alpha"
+
+    /**
      * 窗口大小模式
      */
     const val PREFERENCES_WINDOW_SIZE_MODE = "settings.window_size.mode"

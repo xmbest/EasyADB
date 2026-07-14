@@ -28,6 +28,7 @@ import me.newbieeming.util.PreferencesUtil.PREFERENCES_CUSTOMER_ADB_PATH
 import me.newbieeming.util.PreferencesUtil.PREFERENCES_SCREENSHOT_SAVE_ENABLED
 import me.newbieeming.util.PreferencesUtil.PREFERENCES_SCREENSHOT_SAVE_PATH
 import me.newbieeming.util.PreferencesUtil.PREFERENCES_THEME
+import me.newbieeming.util.PreferencesUtil.PREFERENCES_TITLE_BAR_ALPHA
 import org.jetbrains.skiko.hostOs
 import kotlin.system.exitProcess
 
@@ -43,7 +44,8 @@ class SettingsViewModel : BaseViewModel<SettingsUiState>() {
                 PreferencesUtil.get(PREFERENCES_SCREENSHOT_SAVE_ENABLED, false),
                 screenshotSaveAbsolutePath,
                 PreferencesUtil.get(PREFERENCES_CMD_AUTO_CLOSE_ENABLED, true),
-                PreferencesUtil.get(PREFERENCES_CMD_AUTO_CLOSE_TIMEOUT, 3)
+                PreferencesUtil.get(PREFERENCES_CMD_AUTO_CLOSE_TIMEOUT, 3),
+                PreferencesUtil.get(PREFERENCES_TITLE_BAR_ALPHA, 0.6f)
             )
         )
 
@@ -68,8 +70,15 @@ class SettingsViewModel : BaseViewModel<SettingsUiState>() {
                 is SettingsUiEvent.AdbSettings -> handleAdbSettingsEvent(event)
                 is SettingsUiEvent.ScreenshotSettings -> handleScreenshotSettingsEvent(event)
                 is SettingsUiEvent.TerminalSettings -> handleTerminalSettingsEvent(event)
+                is SettingsUiEvent.TitleBarSettings -> handleTitleBarSettingsEvent(event)
                 is SettingsUiEvent.DataManagement -> handleDataManagementEvent(event)
             }
+        }
+    }
+
+    private fun handleTitleBarSettingsEvent(event: SettingsUiEvent.TitleBarSettings) {
+        when (event) {
+            is SettingsUiEvent.TitleBarSettings.UpdateTitleBarAlpha -> changeTitleBarAlpha(event.alpha)
         }
     }
 
@@ -141,6 +150,11 @@ class SettingsViewModel : BaseViewModel<SettingsUiState>() {
             PreferencesUtil.set(PREFERENCES_THEME, newTheme.label)
             Config.changeTheme(newTheme)
         }
+    }
+
+    private fun changeTitleBarAlpha(alpha: Float) {
+        Config.setTitleBarAlpha(alpha)
+        _uiState.value = _uiState.value.copy(titleBarAlpha = alpha)
     }
 
     private fun changeScreenshotSaveEnabled(enabled: Boolean) {

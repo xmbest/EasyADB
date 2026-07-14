@@ -30,6 +30,7 @@ import me.newbieeming.locale.PropertiesLocalization
 import me.newbieeming.model.Environment
 import me.newbieeming.model.Theme
 import me.newbieeming.util.DialogUtil
+import org.jetbrains.skiko.hostOs
 import kotlin.math.roundToInt
 
 @Composable
@@ -39,8 +40,16 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
     val windowState = Config.windowState.collectAsState().value
     var windowMode by remember { mutableStateOf(Config.getWindowSizeMode()) }
     val savedCustomWindowSize = Config.getCustomWindowSizeDp()
-    var customWidth by remember { mutableStateOf(savedCustomWindowSize.width.value.roundToInt().toString()) }
-    var customHeight by remember { mutableStateOf(savedCustomWindowSize.height.value.roundToInt().toString()) }
+    var customWidth by remember {
+        mutableStateOf(
+            savedCustomWindowSize.width.value.roundToInt().toString()
+        )
+    }
+    var customHeight by remember {
+        mutableStateOf(
+            savedCustomWindowSize.height.value.roundToInt().toString()
+        )
+    }
     var cmdAutoCloseTimeout by remember {
         mutableStateOf(uiState.cmdAutoCloseTimeoutSeconds.toString())
     }
@@ -72,11 +81,29 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
-            ThemeSettingsSection(
-                title = viewModel.getString("theme.setting"),
-                themeList = Config.themeList,
-                selectedTheme = uiState.theme,
-                onThemeSelected = { viewModel.onEvent(SettingsUiEvent.ThemeSettings.UpdateTheme(it)) })
+
+            if (hostOs.isMacOS || hostOs.isWindows) {
+                ThemeSettingsSection(
+                    title = viewModel.getString("theme.setting"),
+                    themeList = Config.themeList,
+                    selectedTheme = uiState.theme,
+                    titleBarAlphaLabel = viewModel.getString("settings.titlebar.alpha"),
+                    titleBarAlpha = uiState.titleBarAlpha,
+                    onThemeSelected = {
+                        viewModel.onEvent(
+                            SettingsUiEvent.ThemeSettings.UpdateTheme(
+                                it
+                            )
+                        )
+                    },
+                    onTitleBarAlphaChange = {
+                        viewModel.onEvent(
+                            SettingsUiEvent.TitleBarSettings.UpdateTitleBarAlpha(
+                                it
+                            )
+                        )
+                    })
+            }
 
             AdbConfigSection(
                 title = viewModel.getString("adb.config"),
@@ -139,11 +166,19 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                 cmdAutoCloseEnabled = uiState.cmdAutoCloseEnabled,
                 cmdAutoCloseTimeout = cmdAutoCloseTimeout,
                 onScreenshotEnabledChange = { enabled ->
-                    viewModel.onEvent(SettingsUiEvent.ScreenshotSettings.UpdateScreenshotSaveEnabled(enabled))
+                    viewModel.onEvent(
+                        SettingsUiEvent.ScreenshotSettings.UpdateScreenshotSaveEnabled(
+                            enabled
+                        )
+                    )
                 },
                 onScreenshotPathChange = { viewModel.onEvent(SettingsUiEvent.ScreenshotSettings.UpdateScreenshotSavePath) },
                 onCmdAutoCloseEnabledChange = { enabled ->
-                    viewModel.onEvent(SettingsUiEvent.TerminalSettings.UpdateCmdAutoCloseEnabled(enabled))
+                    viewModel.onEvent(
+                        SettingsUiEvent.TerminalSettings.UpdateCmdAutoCloseEnabled(
+                            enabled
+                        )
+                    )
                 },
                 onCmdAutoCloseTimeoutChange = onCmdAutoCloseTimeoutChange,
                 onClearData = { viewModel.onEvent(SettingsUiEvent.DataManagement.ClearData) },
@@ -274,7 +309,8 @@ private fun ScreenshotSaveSection(
     val strings = PropertiesLocalization.create(Config.STRINGS_NAME)
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(text = enableLabel, color = MaterialTheme.colors.onBackground)
             Switch(
@@ -295,7 +331,9 @@ private fun ScreenshotSaveSection(
                         Text(strings.get("settings.switch"))
                     }) {
                         Icon(
-                            Icons.Default.Edit, null, modifier = Modifier.size(24.dp).clickable { onChangePath() })
+                            Icons.Default.Edit,
+                            null,
+                            modifier = Modifier.size(24.dp).clickable { onChangePath() })
                     }
                 })
         }
@@ -333,7 +371,8 @@ private fun WindowSizeSection(
                     SegmentedButton(
                         selected = mode == value, onClick = { onModeChange(value) }, label = {
                             Text(
-                                text = label, color = if (mode == value) MaterialTheme.colors.onPrimary
+                                text = label,
+                                color = if (mode == value) MaterialTheme.colors.onPrimary
                                 else MaterialTheme.colors.onSurface
                             )
                         }, shape = SegmentedButtonDefaults.itemShape(
@@ -350,7 +389,8 @@ private fun WindowSizeSection(
 
             if (mode == Config.WindowSizeMode.Custom) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextField(
                         customWidth,
@@ -368,7 +408,8 @@ private fun WindowSizeSection(
                         label = { Text(heightLabel) },
                         keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
                     )
-                    val canApply = customWidth.toIntOrNull()?.let { it > 0 } == true && customHeight.toIntOrNull()
+                    val canApply = customWidth.toIntOrNull()
+                        ?.let { it > 0 } == true && customHeight.toIntOrNull()
                         ?.let { it > 0 } == true
                     Button(onClick = onApplyCustom, enabled = canApply) {
                         Text(applyLabel)
@@ -381,13 +422,56 @@ private fun WindowSizeSection(
 
 @Composable
 private fun ThemeSettingsSection(
-    title: String, themeList: List<Theme>, selectedTheme: Theme?, onThemeSelected: (Theme) -> Unit
+    title: String, themeList: List<Theme>, selectedTheme: Theme?,
+    titleBarAlphaLabel: String,
+    titleBarAlpha: Float,
+    onThemeSelected: (Theme) -> Unit,
+    onTitleBarAlphaChange: (Float) -> Unit
 ) {
     LabeledSection(
         title = title, modifier = Modifier.fillMaxWidth().padding(start = 6.dp, top = 6.dp)
     ) {
-        ThemeSelectionGrid(
-            themeList = themeList, selectedTheme = selectedTheme, onThemeSelected = onThemeSelected
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            ThemeSelectionGrid(
+                themeList = themeList,
+                selectedTheme = selectedTheme,
+                onThemeSelected = onThemeSelected
+            )
+            TitleBarAlphaSection(
+                label = titleBarAlphaLabel,
+                alpha = titleBarAlpha,
+                onAlphaChange = onTitleBarAlphaChange
+            )
+        }
+    }
+}
+
+@Composable
+private fun TitleBarAlphaSection(
+    label: String,
+    alpha: Float,
+    onAlphaChange: (Float) -> Unit
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = "$label: ${(alpha * 100).roundToInt()}%",
+            color = MaterialTheme.colors.onBackground,
+            modifier = Modifier.widthIn(min = 160.dp)
+        )
+        Slider(
+            value = alpha,
+            onValueChange = onAlphaChange,
+            valueRange = 0f..1f,
+            modifier = Modifier.widthIn(max = 280.dp),
+            colors = SliderDefaults.colors(
+                thumbColor = MaterialTheme.colors.primary,
+                activeTrackColor = MaterialTheme.colors.primary,
+                inactiveTrackColor = MaterialTheme.colors.primary.copy(alpha = 0.3f)
+            )
         )
     }
 }
@@ -399,11 +483,14 @@ private fun ThemeSelectionGrid(
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
-        modifier = Modifier.clip(CircleShape).background(MaterialTheme.colors.surface).padding(12.dp)
+        modifier = Modifier.clip(CircleShape).background(MaterialTheme.colors.surface)
+            .padding(12.dp)
     ) {
         themeList.forEach { item ->
             ThemeColorButton(
-                theme = item, isSelected = item == selectedTheme, onClick = { onThemeSelected(item) })
+                theme = item,
+                isSelected = item == selectedTheme,
+                onClick = { onThemeSelected(item) })
         }
     }
 }
@@ -462,14 +549,17 @@ private fun AdbConfigSection(
                 TextField(
                     customerPath,
                     onValueChange = { },
-                    modifier = Modifier.defaultMinSize(minWidth = 360.dp).padding(end = 10.dp, top = 4.dp),
+                    modifier = Modifier.defaultMinSize(minWidth = 360.dp)
+                        .padding(end = 10.dp, top = 4.dp),
                     enabled = false,
                     trailingIcon = {
                         TooltipArea(tooltip = {
                             Text(strings.get("settings.switch"))
                         }) {
                             Icon(
-                                Icons.Default.Edit, null, modifier = Modifier.size(24.dp).clickable {
+                                Icons.Default.Edit,
+                                null,
+                                modifier = Modifier.size(24.dp).clickable {
                                     onCustomerChange()
                                 })
                         }
@@ -482,14 +572,17 @@ private fun AdbConfigSection(
 
 @Composable
 private fun AdbEnvironmentSelector(
-    envList: List<Pair<String, Environment>>, selectedPath: String, onEnvSelected: (Environment) -> Unit
+    envList: List<Pair<String, Environment>>,
+    selectedPath: String,
+    onEnvSelected: (Environment) -> Unit
 ) {
     SingleChoiceSegmentedButtonRow {
         envList.forEachIndexed { index, (label, env) ->
             SegmentedButton(
                 selected = env.path == selectedPath, onClick = { onEnvSelected(env) }, label = {
                     Text(
-                        text = label, color = if (env.path == selectedPath) MaterialTheme.colors.onPrimary
+                        text = label,
+                        color = if (env.path == selectedPath) MaterialTheme.colors.onPrimary
                         else MaterialTheme.colors.onSurface
                     )
                 }, shape = SegmentedButtonDefaults.itemShape(

@@ -23,6 +23,7 @@ import me.newbieeming.theme.red
 import me.newbieeming.theme.yellow
 import me.newbieeming.util.PreferencesUtil
 import me.newbieeming.util.PreferencesUtil.PREFERENCES_THEME
+import me.newbieeming.util.PreferencesUtil.PREFERENCES_TITLE_BAR_ALPHA
 import me.newbieeming.util.PreferencesUtil.PREFERENCES_WINDOW_HEIGHT_DP
 import me.newbieeming.util.PreferencesUtil.PREFERENCES_WINDOW_REMEMBER_HEIGHT_DP
 import me.newbieeming.util.PreferencesUtil.PREFERENCES_WINDOW_REMEMBER_WIDTH_DP
@@ -90,6 +91,18 @@ object Config {
 
     fun changeTheme(newTheme: Theme) {
         _theme.update { newTheme }
+    }
+
+    private val _titleBarAlpha = MutableStateFlow(
+        PreferencesUtil.get(PREFERENCES_TITLE_BAR_ALPHA, 0.8f)
+    )
+
+    val titleBarAlpha = _titleBarAlpha.asStateFlow()
+
+    fun setTitleBarAlpha(alpha: Float) {
+        val clamped = alpha.coerceIn(0f, 1f)
+        PreferencesUtil.set(PREFERENCES_TITLE_BAR_ALPHA, clamped)
+        _titleBarAlpha.update { clamped }
     }
 
     fun getWindowSizeMode(): WindowSizeMode {

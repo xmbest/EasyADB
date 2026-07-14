@@ -17,11 +17,11 @@ object WindowsTitleBarUtil {
         NativeLibrary.getInstance("dwmapi").getFunction("DwmSetWindowAttribute")
     }
 
-    fun apply(window: ComposeWindow, colors: Colors) {
+    fun apply(window: ComposeWindow, colors: Colors, titleBarAlpha: Float = 0.6f) {
         val hwnd = Native.getComponentPointer(window)
         // DWMWA_CAPTION_COLOR 使用 COLORREF，不支持 alpha；用 compositeOver 将透明度预先混合为实色
         val base = if (colors.isLight) Color.White else Color.Black
-        val captionColor = colors.background.copy(alpha = 0.6f).compositeOver(base)
+        val captionColor = colors.background.copy(alpha = titleBarAlpha).compositeOver(base)
         setColor(hwnd, DWM_CAPTION_COLOR, captionColor.toWindowsColorRef())
         setColor(hwnd, DWM_TEXT_COLOR, colors.onBackground.toWindowsColorRef())
     }

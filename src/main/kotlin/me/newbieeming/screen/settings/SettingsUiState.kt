@@ -10,4 +10,5 @@ data class SettingsUiState(
     val screenshotSavePath: String,
     val cmdAutoCloseEnabled: Boolean,
     val cmdAutoCloseTimeoutSeconds: Int,
+    val titleBarAlpha: Float,
 )

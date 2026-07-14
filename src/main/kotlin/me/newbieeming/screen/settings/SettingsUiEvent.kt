@@ -27,6 +27,11 @@ sealed class SettingsUiEvent {
         data class UpdateCmdAutoCloseTimeout(val seconds: Int) : TerminalSettings()
     }
 
+    // 标题栏透明度设置相关事件
+    sealed class TitleBarSettings : SettingsUiEvent() {
+        data class UpdateTitleBarAlpha(val alpha: Float) : TitleBarSettings()
+    }
+
     // 数据管理相关事件
     sealed class DataManagement : SettingsUiEvent() {
         data object ClearData : DataManagement()

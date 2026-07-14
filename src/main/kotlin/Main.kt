@@ -41,14 +41,16 @@ fun FrameWindowScope.App() {
         else -> theme.color
     }
 
-    LaunchedEffect(colors.background, colors.onBackground, colors.isLight) {
+    val titleBarAlpha = Config.titleBarAlpha.collectAsState().value
+
+    LaunchedEffect(colors.background, colors.onBackground, colors.isLight, titleBarAlpha) {
         if (hostOs.isMacOS) {
             window.rootPane.putClientProperty(
                 "apple.awt.windowAppearance",
                 if (colors.isLight) "NSAppearanceNameAqua" else "NSAppearanceNameDarkAqua",
             )
         } else if (hostOs.isWindows) {
-            WindowsTitleBarUtil.apply(window, colors)
+            WindowsTitleBarUtil.apply(window, colors, titleBarAlpha)
         }
     }
 
@@ -56,7 +58,7 @@ fun FrameWindowScope.App() {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colors.background.copy(alpha = 0.6f)),
+                .background(MaterialTheme.colors.background.copy(alpha = titleBarAlpha)),
         ) {
             Box(
                 modifier = Modifier
