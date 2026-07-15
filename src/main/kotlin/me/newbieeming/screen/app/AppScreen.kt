@@ -398,16 +398,18 @@ fun ProcessItem(process: ProcessInfo, viewModel: AppViewModel = viewModel()) {
 
         Row(Modifier.weight(1.5f), horizontalArrangement = Arrangement.SpaceBetween) {
             if (isHovered) {
-                IconButton(onClick = {
-                    viewModel.onEvent(AppUiEvent.AppOperation.Kill(listOf(process.pid)))
-                }) {
-                    TooltipArea({ Text(viewModel.getString("app.kill")) }) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "",
-                            modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colors.primary
-                        )
+                if (viewModel.uiState.value.device?.isRoot == true){
+                    IconButton(onClick = {
+                        viewModel.onEvent(AppUiEvent.AppOperation.Kill(listOf(process.pid)))
+                    }) {
+                        TooltipArea({ Text(viewModel.getString("app.kill")) }) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "",
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colors.primary
+                            )
+                        }
                     }
                 }
                 IconButton(onClick = {

@@ -78,6 +78,15 @@ class AppViewModel : BaseViewModel<AppUiState>() {
     private var loadAppsJob: Job? = null
     private var autoSyncJob: Job? = null
 
+
+    init {
+        viewModelScope.launch(Dispatchers.IO) {
+            DeviceManager.device.collect { device ->
+                _uiState.value = _uiState.value.copy(device = device)
+            }
+        }
+    }
+
     fun onEvent(event: AppUiEvent) {
         viewModelScope.launch(Dispatchers.IO) {
             when (event) {

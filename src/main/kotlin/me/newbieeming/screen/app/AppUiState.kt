@@ -1,6 +1,7 @@
 package me.newbieeming.screen.app
 
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.android.ddmlib.IDevice
 import me.newbieeming.ddmlib.AppInfo
 import me.newbieeming.ddmlib.ProcessInfo
 
@@ -12,6 +13,7 @@ data class AppUiState(
     val buttonList: List<ButtonInfo> = emptyList(),
     val processList: List<ProcessInfo> = emptyList(),
     val appList: List<AppInfo> = emptyList(),
+    val device: IDevice? = null
 )
 
 sealed class AppShowMode {
