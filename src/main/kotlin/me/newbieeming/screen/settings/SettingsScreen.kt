@@ -53,6 +53,9 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
     var cmdAutoCloseTimeout by remember {
         mutableStateOf(uiState.cmdAutoCloseTimeoutSeconds.toString())
     }
+    var loadingMinDuration by remember {
+        mutableStateOf(uiState.loadingMinDurationMs.toString())
+    }
     val applyCustomWindowSize = {
         val width = customWidth.toIntOrNull()
         val height = customHeight.toIntOrNull()
@@ -69,6 +72,13 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
             viewModel.onEvent(SettingsUiEvent.TerminalSettings.UpdateCmdAutoCloseTimeout(seconds))
         }
     }
+    val onLoadingMinDurationChange: (String) -> Unit = { value ->
+        val filtered = value.filter { it.isDigit() }
+        loadingMinDuration = filtered
+        filtered.toIntOrNull()?.let { ms ->
+            viewModel.onEvent(SettingsUiEvent.LoadingSettings.UpdateLoadingMinDuration(ms))
+        }
+    }
 
     LaunchedEffect(uiState.customerAdbPath) {
         if (uiState.customerAdbPath != Environment.Custom.path) {
@@ -77,6 +87,9 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
     }
     LaunchedEffect(uiState.cmdAutoCloseTimeoutSeconds) {
         cmdAutoCloseTimeout = uiState.cmdAutoCloseTimeoutSeconds.toString()
+    }
+    LaunchedEffect(uiState.loadingMinDurationMs) {
+        loadingMinDuration = uiState.loadingMinDurationMs.toString()
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -156,6 +169,8 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                 screenshotPathLabel = viewModel.getString("settings.screenshot.save.path"),
                 cmdAutoCloseEnableLabel = viewModel.getString("settings.cmd.autoClose.enable"),
                 cmdAutoCloseTimeoutLabel = viewModel.getString("settings.cmd.autoClose.timeout"),
+                loadingMinDurationLabel = viewModel.getString("settings.loading.minDuration.label"),
+                loadingMinDurationHint = viewModel.getString("settings.loading.minDuration.hint"),
                 clearDataLabel = viewModel.getString("settings.clearData"),
                 clearDataTitle = viewModel.getString("settings.clearData.confirm.title"),
                 clearDataMessage = viewModel.getString("settings.clearData.confirm.message"),
@@ -165,6 +180,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                 screenshotSavePath = uiState.screenshotSavePath,
                 cmdAutoCloseEnabled = uiState.cmdAutoCloseEnabled,
                 cmdAutoCloseTimeout = cmdAutoCloseTimeout,
+                loadingMinDuration = loadingMinDuration,
                 onScreenshotEnabledChange = { enabled ->
                     viewModel.onEvent(
                         SettingsUiEvent.ScreenshotSettings.UpdateScreenshotSaveEnabled(
@@ -181,6 +197,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                     )
                 },
                 onCmdAutoCloseTimeoutChange = onCmdAutoCloseTimeoutChange,
+                onLoadingMinDurationChange = onLoadingMinDurationChange,
                 onClearData = { viewModel.onEvent(SettingsUiEvent.DataManagement.ClearData) },
                 dialogState = dialogState
             )
@@ -204,6 +221,8 @@ private fun OtherSettingsSection(
     screenshotPathLabel: String,
     cmdAutoCloseEnableLabel: String,
     cmdAutoCloseTimeoutLabel: String,
+    loadingMinDurationLabel: String,
+    loadingMinDurationHint: String,
     clearDataLabel: String,
     clearDataTitle: String,
     clearDataMessage: String,
@@ -213,10 +232,12 @@ private fun OtherSettingsSection(
     screenshotSavePath: String,
     cmdAutoCloseEnabled: Boolean,
     cmdAutoCloseTimeout: String,
+    loadingMinDuration: String,
     onScreenshotEnabledChange: (Boolean) -> Unit,
     onScreenshotPathChange: () -> Unit,
     onCmdAutoCloseEnabledChange: (Boolean) -> Unit,
     onCmdAutoCloseTimeoutChange: (String) -> Unit,
+    onLoadingMinDurationChange: (String) -> Unit,
     onClearData: () -> Unit,
     dialogState: MutableState<me.newbieeming.model.DialogState>
 ) {
@@ -243,6 +264,13 @@ private fun OtherSettingsSection(
                 onTimeoutChange = onCmdAutoCloseTimeoutChange
             )
 
+            LoadingMinDurationSection(
+                label = loadingMinDurationLabel,
+                hint = loadingMinDurationHint,
+                duration = loadingMinDuration,
+                onDurationChange = onLoadingMinDurationChange
+            )
+
             Button(
                 onClick = {
                     DialogUtil.showWarning(
@@ -264,6 +292,30 @@ private fun OtherSettingsSection(
                 Text(text = clearDataLabel, color = MaterialTheme.colors.onError)
             }
         }
+    }
+}
+
+@Composable
+private fun LoadingMinDurationSection(
+    label: String,
+    hint: String,
+    duration: String,
+    onDurationChange: (String) -> Unit
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(top = 8.dp)
+    ) {
+        Text(text = label, color = MaterialTheme.colors.onBackground)
+        TextField(
+            value = duration,
+            onValueChange = onDurationChange,
+            modifier = Modifier.defaultMinSize(minWidth = 120.dp),
+            singleLine = true,
+            label = { Text(hint) },
+            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
+        )
     }
 }
 

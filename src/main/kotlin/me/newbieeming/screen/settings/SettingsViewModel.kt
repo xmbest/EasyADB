@@ -25,6 +25,7 @@ import me.newbieeming.util.PreferencesUtil.PREFERENCES_ADB_PATH
 import me.newbieeming.util.PreferencesUtil.PREFERENCES_CMD_AUTO_CLOSE_ENABLED
 import me.newbieeming.util.PreferencesUtil.PREFERENCES_CMD_AUTO_CLOSE_TIMEOUT
 import me.newbieeming.util.PreferencesUtil.PREFERENCES_CUSTOMER_ADB_PATH
+import me.newbieeming.util.PreferencesUtil.PREFERENCES_LOADING_MIN_DURATION_MS
 import me.newbieeming.util.PreferencesUtil.PREFERENCES_SCREENSHOT_SAVE_ENABLED
 import me.newbieeming.util.PreferencesUtil.PREFERENCES_SCREENSHOT_SAVE_PATH
 import me.newbieeming.util.PreferencesUtil.PREFERENCES_THEME
@@ -45,7 +46,8 @@ class SettingsViewModel : BaseViewModel<SettingsUiState>() {
                 screenshotSaveAbsolutePath,
                 PreferencesUtil.get(PREFERENCES_CMD_AUTO_CLOSE_ENABLED, true),
                 PreferencesUtil.get(PREFERENCES_CMD_AUTO_CLOSE_TIMEOUT, 3),
-                PreferencesUtil.get(PREFERENCES_TITLE_BAR_ALPHA, 0.8f)
+                PreferencesUtil.get(PREFERENCES_TITLE_BAR_ALPHA, 0.8f),
+                PreferencesUtil.get(PREFERENCES_LOADING_MIN_DURATION_MS, 500),
             )
         )
 
@@ -71,6 +73,7 @@ class SettingsViewModel : BaseViewModel<SettingsUiState>() {
                 is SettingsUiEvent.ScreenshotSettings -> handleScreenshotSettingsEvent(event)
                 is SettingsUiEvent.TerminalSettings -> handleTerminalSettingsEvent(event)
                 is SettingsUiEvent.TitleBarSettings -> handleTitleBarSettingsEvent(event)
+                is SettingsUiEvent.LoadingSettings -> handleLoadingSettingsEvent(event)
                 is SettingsUiEvent.DataManagement -> handleDataManagementEvent(event)
             }
         }
@@ -79,6 +82,12 @@ class SettingsViewModel : BaseViewModel<SettingsUiState>() {
     private fun handleTitleBarSettingsEvent(event: SettingsUiEvent.TitleBarSettings) {
         when (event) {
             is SettingsUiEvent.TitleBarSettings.UpdateTitleBarAlpha -> changeTitleBarAlpha(event.alpha)
+        }
+    }
+
+    private fun handleLoadingSettingsEvent(event: SettingsUiEvent.LoadingSettings) {
+        when (event) {
+            is SettingsUiEvent.LoadingSettings.UpdateLoadingMinDuration -> changeLoadingMinDuration(event.ms)
         }
     }
 
@@ -155,6 +164,12 @@ class SettingsViewModel : BaseViewModel<SettingsUiState>() {
     private fun changeTitleBarAlpha(alpha: Float) {
         Config.setTitleBarAlpha(alpha)
         _uiState.value = _uiState.value.copy(titleBarAlpha = alpha)
+    }
+
+    private fun changeLoadingMinDuration(ms: Int) {
+        val safeMs = ms.coerceAtLeast(0)
+        PreferencesUtil.set(PREFERENCES_LOADING_MIN_DURATION_MS, safeMs)
+        _uiState.value = _uiState.value.copy(loadingMinDurationMs = safeMs)
     }
 
     private fun changeScreenshotSaveEnabled(enabled: Boolean) {

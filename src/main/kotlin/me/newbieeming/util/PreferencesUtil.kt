@@ -44,6 +44,11 @@ object PreferencesUtil {
     const val PREFERENCES_TITLE_BAR_ALPHA = "settings.title_bar_alpha"
 
     /**
+     * Loading最短显示时长（ms），应用本身启动时间之外额外等待的时长
+     */
+    const val PREFERENCES_LOADING_MIN_DURATION_MS = "settings.loading_min_duration_ms"
+
+    /**
      * 窗口大小模式
      */
     const val PREFERENCES_WINDOW_SIZE_MODE = "settings.window_size.mode"

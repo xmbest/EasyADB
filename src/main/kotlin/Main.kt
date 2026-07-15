@@ -1,3 +1,4 @@
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
@@ -8,7 +9,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -20,14 +24,22 @@ import androidx.compose.ui.window.application
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import me.newbieeming.Config
 import me.newbieeming.model.Theme
 import me.newbieeming.module.InitModule
+import me.newbieeming.screen.loading.LoadingScreen
 import me.newbieeming.screen.navigation.NaviScreen
 import me.newbieeming.util.ErrorLogger
+import me.newbieeming.util.PreferencesUtil
+import me.newbieeming.util.PreferencesUtil.PREFERENCES_LOADING_MIN_DURATION_MS
 import me.newbieeming.util.WindowsTitleBarUtil
 import org.jetbrains.skiko.hostOs
+import kotlin.time.Duration.Companion.milliseconds
 
 private val macTitleBarHeight = 28.dp
 
@@ -54,6 +66,21 @@ fun FrameWindowScope.App() {
         }
     }
 
+    var isReady by remember { mutableStateOf(false) }
+
+    // init() 与最短等待时长并发，两者都完成才切换到主界面
+    // 最短时长 = 应用本身启动耗时 + 用户在设置中配置的额外时长
+    LaunchedEffect(Unit) {
+        val minDurationMs = PreferencesUtil.get(PREFERENCES_LOADING_MIN_DURATION_MS, 500)
+        coroutineScope {
+            val initJob = async(Dispatchers.IO) { InitModule.init() }
+            val delayJob = async { delay(minDurationMs.toLong().milliseconds) }
+            initJob.await()
+            delayJob.await()
+        }
+        isReady = true
+    }
+
     MaterialTheme(colors = colors) {
         Box(
             modifier = Modifier
@@ -65,7 +92,9 @@ fun FrameWindowScope.App() {
                     .fillMaxSize()
                     .padding(top = if (hostOs.isMacOS) macTitleBarHeight else 0.dp),
             ) {
-                NaviScreen()
+                Crossfade(targetState = isReady) { ready ->
+                    if (ready) NaviScreen() else LoadingScreen()
+                }
             }
         }
     }
@@ -111,7 +140,6 @@ fun main() {
                 LocalViewModelStoreOwner provides viewModelStoreOwner
             ) {
                 App()
-                InitModule.init()
             }
         }
     }

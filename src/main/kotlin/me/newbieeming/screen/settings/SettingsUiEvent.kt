@@ -32,6 +32,11 @@ sealed class SettingsUiEvent {
         data class UpdateTitleBarAlpha(val alpha: Float) : TitleBarSettings()
     }
 
+    // 启动 Loading 设置相关事件
+    sealed class LoadingSettings : SettingsUiEvent() {
+        data class UpdateLoadingMinDuration(val ms: Int) : LoadingSettings()
+    }
+
     // 数据管理相关事件
     sealed class DataManagement : SettingsUiEvent() {
         data object ClearData : DataManagement()
