@@ -10,5 +10,7 @@ data class FileUiState(
     val toast: String = "",
     val filterStr: String = "",
     val favorites: List<String> = emptyList(), // 收藏夹列表
-    val showFavoritesDropdown: Boolean = false // 是否显示收藏夹下拉菜单
+    val showFavoritesDropdown: Boolean = false, // 是否显示收藏夹下拉菜单
+    val isSelectionMode: Boolean = false, // 是否为选中模式
+    val selectedFilePaths: Set<String> = emptySet() // 选中的文件路径列表
 )

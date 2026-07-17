@@ -126,6 +126,10 @@ object PreferencesUtil {
         }
     }
 
+    fun setFavorites(paths: Collection<String>) {
+        set(PREFERENCES_FILE_FAVORITES, paths.distinct().joinToString("|"))
+    }
+
     /**
      * 添加路径到收藏夹
      */

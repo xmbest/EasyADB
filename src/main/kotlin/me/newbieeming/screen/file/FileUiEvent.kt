@@ -32,6 +32,7 @@ sealed class FileUiEvent {
     // 收藏夹相关事件
     sealed class Favorites : FileUiEvent() {
         data class ToggleFavorite(val filePath: String) : Favorites()
+        data class SetFavorites(val filePaths: Set<String>, val favorite: Boolean) : Favorites()
         data object RefreshFavorites : Favorites()
     }
 
@@ -39,5 +40,9 @@ sealed class FileUiEvent {
     sealed class UI : FileUiEvent() {
         data class Toast(val message: String) : UI()
         data class UpdateFilter(val filter: String) : UI()
+        data object ToggleSelectionMode : UI()
+        data class EnterSelectionMode(val filePath: String) : UI()
+        data class ToggleFileSelection(val filePath: String) : UI()
+        data object SelectAllFiles : UI()
     }
 }

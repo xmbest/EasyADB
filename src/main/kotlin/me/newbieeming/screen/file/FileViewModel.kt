@@ -22,6 +22,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.newbieeming.ddmlib.ClipboardUtil
@@ -75,13 +76,19 @@ class FileViewModel : BaseViewModel<FileUiState>() {
     }
 
     fun onEvent(event: FileUiEvent) {
+        // 选中等轻量 UI 状态需要立即反馈，不进入后台协程调度队列。
+        if (event is FileUiEvent.UI) {
+            handleUIEvent(event)
+            return
+        }
+
         viewModelScope.launch(Dispatchers.Default) {
             when (event) {
                 is FileUiEvent.Navigation -> handleNavigationEvent(event)
                 is FileUiEvent.FileOperation -> handleFileOperationEvent(event)
                 is FileUiEvent.Drag -> handleDragEvent(event)
                 is FileUiEvent.Favorites -> handleFavoritesEvent(event)
-                is FileUiEvent.UI -> handleUIEvent(event)
+                is FileUiEvent.UI -> Unit
             }
         }
     }
@@ -118,6 +125,7 @@ class FileViewModel : BaseViewModel<FileUiState>() {
     private fun handleFavoritesEvent(event: FileUiEvent.Favorites) {
         when (event) {
             is FileUiEvent.Favorites.ToggleFavorite -> handleToggleFavorite(event.filePath)
+            is FileUiEvent.Favorites.SetFavorites -> handleSetFavorites(event.filePaths, event.favorite)
             is FileUiEvent.Favorites.RefreshFavorites -> handleRefreshFavorites()
         }
     }
@@ -126,6 +134,10 @@ class FileViewModel : BaseViewModel<FileUiState>() {
         when (event) {
             is FileUiEvent.UI.Toast -> handleToast(event.message)
             is FileUiEvent.UI.UpdateFilter -> handleUpdateFilterWithDebounce(event.filter)
+            is FileUiEvent.UI.ToggleSelectionMode -> toggleSelectionMode()
+            is FileUiEvent.UI.EnterSelectionMode -> enterSelectionMode(event.filePath)
+            is FileUiEvent.UI.ToggleFileSelection -> toggleFileSelection(event.filePath)
+            is FileUiEvent.UI.SelectAllFiles -> selectAllFiles()
         }
     }
 
@@ -155,12 +167,22 @@ class FileViewModel : BaseViewModel<FileUiState>() {
             fileList.filter { it.name.contains(uiState.value.filterStr, true) }
         }
 
-        _uiState.value = _uiState.value.copy(children = filteredList)
+        _uiState.value = _uiState.value.copy(
+            children = filteredList,
+            selectedFilePaths = uiState.value.selectedFilePaths.intersect(
+                filteredList.map { it.absolutePath }.toSet()
+            )
+        )
     }
 
     private suspend fun navigateToPath(path: String) {
         Log.d(TAG, "navigateToPath path = $path")
-        _uiState.value = _uiState.value.copy(parentPath = path, filterStr = "")
+        _uiState.value = _uiState.value.copy(
+            parentPath = path,
+            filterStr = "",
+            isSelectionMode = false,
+            selectedFilePaths = emptySet()
+        )
         // 清除缓存，因为路径改变了
         cachedFileList = emptyList()
         cachedPath = ""
@@ -215,7 +237,12 @@ class FileViewModel : BaseViewModel<FileUiState>() {
         }
 
         // 更新UI状态
-        _uiState.value = _uiState.value.copy(children = filteredList)
+        _uiState.value = _uiState.value.copy(
+            children = filteredList,
+            selectedFilePaths = uiState.value.selectedFilePaths.intersect(
+                filteredList.map { it.absolutePath }.toSet()
+            )
+        )
     }
 
     /**
@@ -328,6 +355,52 @@ class FileViewModel : BaseViewModel<FileUiState>() {
         )
     }
 
+    private fun toggleSelectionMode() {
+        _uiState.update {
+            it.copy(
+                isSelectionMode = !it.isSelectionMode,
+                selectedFilePaths = emptySet()
+            )
+        }
+    }
+
+    private fun toggleFileSelection(filePath: String) {
+        if (!uiState.value.isSelectionMode) return
+
+        _uiState.update {
+            val selectedPaths = it.selectedFilePaths
+            it.copy(
+                selectedFilePaths = if (filePath in selectedPaths) {
+                    selectedPaths - filePath
+                } else {
+                    selectedPaths + filePath
+                }
+            )
+        }
+    }
+
+    private fun enterSelectionMode(filePath: String) {
+        _uiState.update {
+            it.copy(
+                isSelectionMode = true,
+                selectedFilePaths = setOf(filePath)
+            )
+        }
+    }
+
+    private fun selectAllFiles() {
+        _uiState.update {
+            if (it.children.isEmpty()) {
+                it
+            } else {
+                it.copy(
+                    isSelectionMode = true,
+                    selectedFilePaths = it.children.mapTo(mutableSetOf()) { file -> file.absolutePath }
+                )
+            }
+        }
+    }
+
     private suspend fun handleUploadFiles(files: List<String>, remotePath: String) {
         withContext(Dispatchers.IO) {
             DeviceOperate.push(
@@ -361,6 +434,10 @@ class FileViewModel : BaseViewModel<FileUiState>() {
         withContext(Dispatchers.IO) {
             DeviceOperate.rm(files.map { it.absolutePath })
         }
+        _uiState.value = _uiState.value.copy(
+            isSelectionMode = false,
+            selectedFilePaths = emptySet()
+        )
         // 清除缓存，因为文件列表已改变
         clearCache()
         refreshCurrentDirectory()
@@ -527,6 +604,16 @@ class FileViewModel : BaseViewModel<FileUiState>() {
             currentFavorites + filePath
         }
 
+        _uiState.value = _uiState.value.copy(favorites = updatedFavorites)
+    }
+
+    private fun handleSetFavorites(filePaths: Set<String>, favorite: Boolean) {
+        if (filePaths.isEmpty()) return
+
+        val updatedFavorites = _uiState.value.favorites.toMutableSet().apply {
+            if (favorite) addAll(filePaths) else removeAll(filePaths)
+        }.toList()
+        PreferencesUtil.setFavorites(updatedFavorites)
         _uiState.value = _uiState.value.copy(favorites = updatedFavorites)
     }
 
