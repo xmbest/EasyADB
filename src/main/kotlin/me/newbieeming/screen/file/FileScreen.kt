@@ -243,6 +243,11 @@ private fun setKeyEvent(viewModel: FileViewModel, uiState: FileUiState, event: K
     // 处理带修饰键的快捷键
     if (isModifierPressed) {
         return when (keyCode) {
+            Key.A.keyCode -> {
+                viewModel.onEvent(FileUiEvent.UI.SelectAllFiles)
+                true
+            }
+
             Key.C.keyCode -> {
                 ClipboardUtil.setSysClipboardText(uiState.parentPath)
                 viewModel.onEvent(FileUiEvent.UI.Toast(viewModel.getString("file.copyPath.success")))
@@ -304,7 +309,9 @@ private fun setKeyEvent(viewModel: FileViewModel, uiState: FileUiState, event: K
  * 处理Escape键逻辑
  */
 private fun handleEscapeKey(viewModel: FileViewModel, uiState: FileUiState) {
-    if (uiState.filterStr.isNotBlank()) {
+    if (uiState.isSelectionMode) {
+        viewModel.onEvent(FileUiEvent.UI.ToggleSelectionMode)
+    } else if (uiState.filterStr.isNotBlank()) {
         // 如果有过滤条件，先清除过滤
         viewModel.onEvent(FileUiEvent.UI.UpdateFilter(""))
     } else {
@@ -343,6 +350,8 @@ private fun shouldStartDragAndDrop(event: DragAndDropEvent): Boolean {
 private fun FileList(
     viewModel: FileViewModel, uiState: FileUiState, lazyListState: LazyListState
 ) {
+    val favoritePaths = remember(uiState.favorites) { uiState.favorites.toSet() }
+
     LazyColumn(
         state = lazyListState,
         modifier = Modifier.fillMaxSize().padding(bottom = 6.dp)
@@ -361,8 +370,14 @@ private fun FileList(
                 }
             }
         } else {
-            items(uiState.children) { file ->
-                FileContent(file, viewModel)
+            items(uiState.children, key = { it.absolutePath }) { file ->
+                FileContent(
+                    file = file,
+                    viewModel = viewModel,
+                    isSelectionMode = uiState.isSelectionMode,
+                    isSelected = file.absolutePath in uiState.selectedFilePaths,
+                    isFavorite = file.absolutePath in favoritePaths
+                )
             }
         }
     }

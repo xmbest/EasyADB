@@ -33,13 +33,17 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.NoteAdd
 import androidx.compose.material.icons.filled.ArrowOutward
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreateNewFolder
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -101,6 +105,10 @@ fun FileHeader(viewModel: FileViewModel) {
     var showCreateFolderDialog by remember { mutableStateOf(false) }
     var showCreateFileDialog by remember { mutableStateOf(false) }
     var showDeleteAllDialog by remember { mutableStateOf(false) }
+    var showDeleteSelectedDialog by remember { mutableStateOf(false) }
+    val selectedFiles = uiState.children.filter { it.absolutePath in uiState.selectedFilePaths }
+    val allSelectedFavorites = uiState.selectedFilePaths.isNotEmpty() &&
+        uiState.selectedFilePaths.all { it in uiState.favorites }
 
     Column(
         modifier = Modifier
@@ -116,23 +124,53 @@ fun FileHeader(viewModel: FileViewModel) {
             copyPathLabel = viewModel.getString("file.copyPath")
         )
 
-        FunctionButtonsRow(
-            viewModel = viewModel,
-            showBackButton = uiState.parentPath != FILE_SPLIT,
-            showDelectFilesButton = uiState.children.isNotEmpty(),
-            onBackClick = { viewModel.onEvent(FileUiEvent.Navigation.NavigateToPath(getParentPath(uiState.parentPath))) },
-            onRefreshClick = { viewModel.onEvent(FileUiEvent.Navigation.Refresh) },
-            onNewFolderClick = { showCreateFolderDialog = true },
-            onNewFileClick = { showCreateFileDialog = true },
-            onImportClick = { viewModel.onEvent(FileUiEvent.FileOperation.Imported) },
-            onDeleteAllClick = { showDeleteAllDialog = true },
-            backLabel = viewModel.getString("file.back"),
-            refreshLabel = viewModel.getString("file.refresh"),
-            newFolderLabel = viewModel.getString("file.newFolder"),
-            newFileLabel = viewModel.getString("file.newFile"),
-            importLabel = viewModel.getString("file.importFile"),
-            deleteAllLabel = viewModel.getString("file.deleteAll")
-        )
+        if (uiState.isSelectionMode) {
+            SelectionButtonsRow(
+                selectedCount = uiState.selectedFilePaths.size,
+                onCancelClick = { viewModel.onEvent(FileUiEvent.UI.ToggleSelectionMode) },
+                onExportClick = {
+                    viewModel.onEvent(FileUiEvent.FileOperation.DownloadFiles(selectedFiles))
+                },
+                onFavoriteClick = {
+                    viewModel.onEvent(
+                        FileUiEvent.Favorites.SetFavorites(
+                            filePaths = uiState.selectedFilePaths,
+                            favorite = !allSelectedFavorites
+                        )
+                    )
+                },
+                onDeleteClick = { showDeleteSelectedDialog = true },
+                cancelLabel = viewModel.getString("file.selection.cancel"),
+                selectedLabel = viewModel.getString("file.selection.count")
+                    .format(uiState.selectedFilePaths.size),
+                exportLabel = viewModel.getString("file.export"),
+                favoriteLabel = viewModel.getString(
+                    if (allSelectedFavorites) "favorites.cancel" else "favorites.add"
+                ),
+                allSelectedFavorites = allSelectedFavorites,
+                deleteLabel = viewModel.getString("file.delete")
+            )
+        } else {
+            FunctionButtonsRow(
+                viewModel = viewModel,
+                showBackButton = uiState.parentPath != FILE_SPLIT,
+                showDelectFilesButton = uiState.children.isNotEmpty(),
+                onBackClick = { viewModel.onEvent(FileUiEvent.Navigation.NavigateToPath(getParentPath(uiState.parentPath))) },
+                onRefreshClick = { viewModel.onEvent(FileUiEvent.Navigation.Refresh) },
+                onNewFolderClick = { showCreateFolderDialog = true },
+                onNewFileClick = { showCreateFileDialog = true },
+                onImportClick = { viewModel.onEvent(FileUiEvent.FileOperation.Imported) },
+                onSelectionClick = { viewModel.onEvent(FileUiEvent.UI.ToggleSelectionMode) },
+                onDeleteAllClick = { showDeleteAllDialog = true },
+                backLabel = viewModel.getString("file.back"),
+                refreshLabel = viewModel.getString("file.refresh"),
+                newFolderLabel = viewModel.getString("file.newFolder"),
+                newFileLabel = viewModel.getString("file.newFile"),
+                importLabel = viewModel.getString("file.importFile"),
+                selectionLabel = viewModel.getString("file.selection.mode"),
+                deleteAllLabel = viewModel.getString("file.deleteAll")
+            )
+        }
     }
 
     // 创建文件夹对话框
@@ -176,6 +214,20 @@ fun FileHeader(viewModel: FileViewModel) {
                 showDeleteAllDialog = false
             },
             onCancel = { showDeleteAllDialog = false }
+        )
+    }
+
+    if (showDeleteSelectedDialog) {
+        DialogUtil.showWarning(
+            dialogState = dialogState,
+            title = viewModel.getString("file.delete"),
+            message = viewModel.getString("file.selection.delete.confirm")
+                .format(uiState.selectedFilePaths.size),
+            onConfirm = {
+                viewModel.onEvent(FileUiEvent.FileOperation.DeleteFiles(selectedFiles))
+                showDeleteSelectedDialog = false
+            },
+            onCancel = { showDeleteSelectedDialog = false }
         )
     }
 }
@@ -298,12 +350,14 @@ private fun FunctionButtonsRow(
     onNewFolderClick: () -> Unit,
     onNewFileClick: () -> Unit,
     onImportClick: () -> Unit,
+    onSelectionClick: () -> Unit,
     onDeleteAllClick: () -> Unit,
     backLabel: String,
     refreshLabel: String,
     newFolderLabel: String,
     newFileLabel: String,
     importLabel: String,
+    selectionLabel: String,
     deleteAllLabel: String
 ) {
     FlowRow(
@@ -326,6 +380,14 @@ private fun FunctionButtonsRow(
             text = refreshLabel,
             onClick = onRefreshClick
         )
+
+        if (showDelectFilesButton) {
+            FunctionButton(
+                icon = Icons.Default.Checklist,
+                text = selectionLabel,
+                onClick = onSelectionClick
+            )
+        }
 
         // 收藏夹按钮
         FavoritesButton(viewModel)
@@ -353,6 +415,44 @@ private fun FunctionButtonsRow(
                 text = deleteAllLabel,
                 onClick = onDeleteAllClick
             )
+        }
+    }
+}
+
+@Composable
+private fun SelectionButtonsRow(
+    selectedCount: Int,
+    onCancelClick: () -> Unit,
+    onExportClick: () -> Unit,
+    onFavoriteClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    cancelLabel: String,
+    selectedLabel: String,
+    exportLabel: String,
+    favoriteLabel: String,
+    allSelectedFavorites: Boolean,
+    deleteLabel: String
+) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+    ) {
+        Text(
+            text = selectedLabel,
+            color = MaterialTheme.colors.onBackground,
+            fontSize = 12.sp,
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp)
+        )
+        FunctionButton(Icons.Default.Close, cancelLabel, onCancelClick)
+        if (selectedCount > 0) {
+            FunctionButton(
+                if (allSelectedFavorites) Icons.Default.Star else Icons.Outlined.StarBorder,
+                favoriteLabel,
+                onFavoriteClick
+            )
+            FunctionButton(Icons.Default.FileDownload, exportLabel, onExportClick)
+            FunctionButton(Icons.Default.Delete, deleteLabel, onDeleteClick)
         }
     }
 }
