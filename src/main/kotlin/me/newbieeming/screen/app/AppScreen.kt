@@ -303,18 +303,21 @@ fun Header(uiState: AppUiState, viewModel: AppViewModel = viewModel()) {
                 Text(
                     text = item,
                     textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.onSurface,
                     modifier = Modifier.weight(1f).align(Alignment.CenterVertically)
                 )
             }
             Text(
                 "name",
                 textAlign = TextAlign.Center,
+                color = MaterialTheme.colors.onSurface,
                 modifier = Modifier.weight(5f).align(Alignment.CenterVertically)
             )
             Row(Modifier.weight(1.5f)) {
                 Text(
                     "action",
                     textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.onSurface,
                     modifier = Modifier.align(Alignment.CenterVertically)
                 )
             }
@@ -322,32 +325,38 @@ fun Header(uiState: AppUiState, viewModel: AppViewModel = viewModel()) {
             Text(
                 text = "packageName",
                 textAlign = TextAlign.Start,
+                color = MaterialTheme.colors.onSurface,
                 modifier = Modifier.weight(3.5f).padding(start = 4.dp)
                     .align(Alignment.CenterVertically)
             )
             Text(
                 text = "versionName",
                 textAlign = TextAlign.Center,
+                color = MaterialTheme.colors.onSurface,
                 modifier = Modifier.weight(2f).align(Alignment.CenterVertically)
             )
             Text(
                 text = "versionCode",
                 textAlign = TextAlign.Center,
+                color = MaterialTheme.colors.onSurface,
                 modifier = Modifier.weight(2f).align(Alignment.CenterVertically)
             )
             Text(
                 text = "min/target",
                 textAlign = TextAlign.Center,
+                color = MaterialTheme.colors.onSurface,
                 modifier = Modifier.weight(2f).align(Alignment.CenterVertically)
             )
             Text(
                 text = "size",
                 textAlign = TextAlign.Center,
+                color = MaterialTheme.colors.onSurface,
                 modifier = Modifier.weight(2f).align(Alignment.CenterVertically)
             )
             Text(
                 text = viewModel.getString("app.action"),
                 textAlign = TextAlign.Center,
+                color = MaterialTheme.colors.onSurface,
                 modifier = Modifier.weight(3.5f).align(Alignment.CenterVertically)
             )
         }
@@ -432,6 +441,8 @@ fun ProcessItem(process: ProcessInfo, viewModel: AppViewModel = viewModel()) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HeaderTool(viewModel: AppViewModel, uiState: AppUiState) {
+    val searchTextColor = MaterialTheme.colors.onSurface
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.padding(bottom = 8.dp)
@@ -448,7 +459,12 @@ fun HeaderTool(viewModel: AppViewModel, uiState: AppUiState) {
             },
             expanded = false,
             onExpandedChange = { },
-            placeholder = { Text(viewModel.getString("app.search")) },
+            placeholder = {
+                Text(
+                    text = viewModel.getString("app.search"),
+                    color = searchTextColor.copy(alpha = 0.6f)
+                )
+            },
             leadingIcon = {
                 Icon(
                     imageVector = Icons.Default.Search,
@@ -464,10 +480,21 @@ fun HeaderTool(viewModel: AppViewModel, uiState: AppUiState) {
                         modifier = Modifier.size(48.dp).clip(CircleShape)
                             .background(MaterialTheme.colors.surface)
                     ) {
-                        Icon(Icons.Default.Cancel, "")
+                        Icon(
+                            imageVector = Icons.Default.Cancel,
+                            contentDescription = "",
+                            tint = searchTextColor
+                        )
                     }
                 }
             },
+            colors = SearchBarDefaults.inputFieldColors(
+                focusedTextColor = searchTextColor,
+                unfocusedTextColor = searchTextColor,
+                cursorColor = MaterialTheme.colors.primary,
+                focusedPlaceholderColor = searchTextColor.copy(alpha = 0.6f),
+                unfocusedPlaceholderColor = searchTextColor.copy(alpha = 0.6f)
+            ),
             modifier = Modifier.weight(1f).clip(CircleShape)
                 .background(MaterialTheme.colors.surface)
         )
