@@ -16,6 +16,12 @@ import kotlin.coroutines.resume
 
 object DeviceOperate {
     private const val TAG = "DeviceOperate"
+    private const val SHELL_EXIT_CODE_MARKER = "__EASYADB_EXIT_CODE__:"
+
+    data class ShellCommandResult(
+        val output: String,
+        val exitCode: Int?,
+    )
 
     private val device
         get() = DeviceManager.device.value
@@ -615,6 +621,55 @@ object DeviceOperate {
     }
 
     fun shell(command: String) = device?.executeShellCommand(command, EmptyReceiver())
+
+    fun executeShellCommand(command: String): ShellCommandResult {
+        val outputLines = mutableListOf<String>()
+        val selectedDevice = requireNotNull(device) { "No device connected." }
+        val commandWithExitCode = "$command; printf '\\n$SHELL_EXIT_CODE_MARKER%s\\n' \$?"
+
+        selectedDevice.executeShellCommand(commandWithExitCode, object : MultiLineReceiver() {
+            override fun processNewLines(lines: Array<out String>?) {
+                lines?.forEach(outputLines::add)
+            }
+
+            override fun isCancelled() = false
+        })
+
+        val exitCode = outputLines.lastOrNull { it.startsWith(SHELL_EXIT_CODE_MARKER) }
+            ?.removePrefix(SHELL_EXIT_CODE_MARKER)
+            ?.toIntOrNull()
+        val output = outputLines
+            .filterNot { it.startsWith(SHELL_EXIT_CODE_MARKER) }
+            .joinToString("\n")
+            .trim()
+
+        return ShellCommandResult(output, exitCode)
+    }
+
+    fun pushFile(localPath: String, remotePath: String) {
+        val resolvedLocalPath = expandHomeDirectory(localPath)
+        val localFile = File(resolvedLocalPath)
+        require(localFile.isFile) {
+            "Local file not found: $localPath (resolved: ${localFile.absolutePath})"
+        }
+        val selectedDevice = requireNotNull(device) { "No device connected." }
+
+        Log.i(
+            TAG,
+            "Push start: local=$localPath, resolved=${localFile.absolutePath}, remote=$remotePath, serial=${selectedDevice.serialNumber}",
+        )
+        selectedDevice.pushFile(localFile.absolutePath, remotePath)
+        Log.i(TAG, "Push complete: remote=$remotePath, serial=${selectedDevice.serialNumber}")
+    }
+
+    private fun expandHomeDirectory(path: String): String {
+        val userHome = System.getProperty("user.home")
+        return when {
+            path == "~" -> userHome
+            path.startsWith("~/") || path.startsWith("~\\") -> userHome + path.drop(1)
+            else -> path
+        }
+    }
 
     suspend fun shell(command: String, timeMillis: Long) = suspendCancellableCoroutine {
         coroutineScope.launch {

@@ -9,6 +9,7 @@ import io.github.vinceglb.filekit.dialogs.openFileSaver
 import io.github.vinceglb.filekit.path
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.newbieeming.appStorageAbsolutePath
@@ -31,9 +32,26 @@ class CustomerViewModel : BaseViewModel<CustomerUiState>() {
             FastBroadType.BUTTON_GROUP to ButtonGroupData::class.java,
             FastBroadType.SHELL_SEND to ShellSendData::class.java
         )
+
+        private const val ADB_PREFIX = "adb "
+        private const val ADB_SHELL_PREFIX = "adb shell "
+        private val adbPushPrefix = Regex("""^adb\s+push(?:\s|$)""")
+        private val adbPushCommand = Regex("""^adb\s+push\s+(.+?)\s+(\S+)\s*$""")
     }
 
     override val _uiState: MutableStateFlow<CustomerUiState> = MutableStateFlow(CustomerUiState())
+
+    private sealed class ExecutableCommand {
+
+        data class AdbPush(
+            val localPath: String,
+            val remotePath: String,
+        ) : ExecutableCommand()
+
+        data class DeviceShell(
+            val command: String,
+        ) : ExecutableCommand()
+    }
 
     init {
         loadConfig()
@@ -65,8 +83,13 @@ class CustomerViewModel : BaseViewModel<CustomerUiState>() {
 
     private fun handleUIEvent(event: CustomerUiEvent.UI) {
         when (event) {
-            is CustomerUiEvent.UI.UpdateInputValue -> handleUpdateInputValue(event.uuid, event.value)
+            is CustomerUiEvent.UI.UpdateInputValue -> handleUpdateInputValue(
+                event.uuid,
+                event.value
+            )
+
             is CustomerUiEvent.UI.Toast -> handleToast(event.message)
+
         }
     }
 
@@ -101,11 +124,8 @@ class CustomerViewModel : BaseViewModel<CustomerUiState>() {
             toastMessage = getString("customer.config.load.failed")
         }.getOrNull() ?: getDefaultConfig()
 
-        _uiState.value = _uiState.value.copy(
-            configList = configList,
-            toast = toastMessage
-        )
-        Log.e(TAG, "loadConfig finished, toast: $toastMessage")
+        _uiState.update { it.copy(configList = configList, toast = toastMessage) }
+        Log.i(TAG, "loadConfig finished, toast: $toastMessage")
     }
 
     private suspend fun handleExportConfig() {
@@ -113,7 +133,7 @@ class CustomerViewModel : BaseViewModel<CustomerUiState>() {
             try {
                 val configFile = File(appStorageAbsolutePath, cfg.second)
                 if (!configFile.exists()) {
-                    _uiState.value = _uiState.value.copy(toast = getString("customer.export.no.config"))
+                    _uiState.update { it.copy(toast = getString("customer.export.no.config")) }
                     return@withContext
                 }
 
@@ -125,11 +145,11 @@ class CustomerViewModel : BaseViewModel<CustomerUiState>() {
                 if (file != null) {
                     val configContent = configFile.readText()
                     File(file.path).writeText(configContent)
-                    _uiState.value = _uiState.value.copy(toast = getString("customer.export.success"))
+                    _uiState.update { it.copy(toast = getString("customer.export.success")) }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                _uiState.value = _uiState.value.copy(toast = "${getString("customer.export.failed")}: ${e.message}")
+                _uiState.update { it.copy(toast = "${getString("customer.export.failed")}: ${e.message}") }
             }
         }
     }
@@ -146,16 +166,16 @@ class CustomerViewModel : BaseViewModel<CustomerUiState>() {
                 // Validate and parse config
                 val validationResult = validateConfigJson(configJson)
                 if (!validationResult.isValid) {
-                    _uiState.value = _uiState.value.copy(toast = validationResult.errorMessage!!)
+                    _uiState.update { it.copy(toast = validationResult.errorMessage!!) }
                     return@withContext
                 }
 
                 saveConfig(configJson)
-                _uiState.value = _uiState.value.copy(toast = getString("customer.import.success"))
+                _uiState.update { it.copy(toast = getString("customer.import.success")) }
 
             } catch (e: Exception) {
                 Log.e(TAG, "Import config failed: ${e.message}")
-                _uiState.value = _uiState.value.copy(toast = "${getString("customer.import.failed")}: ${e.message}")
+                _uiState.update { it.copy(toast = "${getString("customer.import.failed")}: ${e.message}") }
             }
         }
     }
@@ -197,7 +217,7 @@ class CustomerViewModel : BaseViewModel<CustomerUiState>() {
 
     private data class ValidationResult(
         val isValid: Boolean,
-        val errorMessage: String? = null
+        val errorMessage: String? = null,
     )
 
     private fun saveConfig(str: String) {
@@ -208,13 +228,65 @@ class CustomerViewModel : BaseViewModel<CustomerUiState>() {
 
     private suspend fun handleExecuteCommand(cmd: String) {
         withContext(Dispatchers.IO) {
+            val command = cmd.trim()
+
             try {
-                DeviceOperate.shell(cmd.replaceFirst("adb shell", ""))
+                Log.i(TAG, "Execute custom command: $command")
+                executeCustomCommand(
+                    parseAdbPushCommand(command)
+                        ?: ExecutableCommand.DeviceShell(toDeviceShellCommand(command))
+                )
             } catch (e: Exception) {
-                e.printStackTrace()
-                _uiState.value = _uiState.value.copy(toast = "${getString("customer.command.failed")}: ${e.message}")
+                handleCommandFailure(command, e)
             }
         }
+    }
+
+    private fun parseAdbPushCommand(command: String): ExecutableCommand.AdbPush? {
+        if (!adbPushPrefix.containsMatchIn(command)) return null
+
+        val match = adbPushCommand.matchEntire(command)
+            ?: throw IllegalArgumentException("Unsupported adb push command: $command")
+        return ExecutableCommand.AdbPush(
+            localPath = match.groupValues[1].trim().removeSurrounding("\""),
+            remotePath = match.groupValues[2].trim().removeSurrounding("\""),
+        )
+    }
+
+    private fun toDeviceShellCommand(command: String): String {
+        return command
+            .removePrefix(ADB_SHELL_PREFIX)
+            .removePrefix(ADB_PREFIX)
+            .trimStart()
+    }
+
+    private fun executeCustomCommand(command: ExecutableCommand) {
+        when (command) {
+            is ExecutableCommand.AdbPush -> {
+                DeviceOperate.pushFile(command.localPath, command.remotePath)
+                Log.i(
+                    TAG,
+                    "Custom adb push completed: ${command.localPath} -> ${command.remotePath}"
+                )
+            }
+
+            is ExecutableCommand.DeviceShell -> {
+                Log.i(TAG, "Execute device shell command: ${command.command}")
+                val result = DeviceOperate.executeShellCommand(command.command)
+                Log.i(
+                    TAG,
+                    "Device shell completed: exitCode=${result.exitCode}, output=${result.output.ifBlank { "<empty>" }}",
+                )
+                check(result.exitCode == 0) {
+                    "Device shell failed with exit code ${result.exitCode}: ${result.output}"
+                }
+            }
+        }
+    }
+
+    private fun handleCommandFailure(command: String, error: Exception) {
+        Log.e(TAG, "Custom command failed: $command", error)
+        _uiState.update { it.copy(toast = "${getString("customer.command.failed")}: ${error.message}") }
     }
 
     private fun handleUpdateInputValue(uuid: String?, value: String) {
@@ -222,7 +294,7 @@ class CustomerViewModel : BaseViewModel<CustomerUiState>() {
     }
 
     private fun handleToast(message: String) {
-        _uiState.value = _uiState.value.copy(toast = message)
+        _uiState.update { it.copy(toast = message) }
     }
 
     private fun getDefaultConfig(): List<BaseFastBroadData> {
